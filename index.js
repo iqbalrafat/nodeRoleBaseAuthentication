@@ -6,6 +6,8 @@ const jwt=require("jsonwebtoken");
 const roles = require("user-groups-roles");
 const dotenv = require("dotenv").config();
 const cookieParser =require('cookie-parser');
+const httpMsgs=require("http-msgs");
+const crypto= require("crypto-js");
 
 app.use(bodyparser.urlencoded({extended:false}));
 
@@ -26,27 +28,60 @@ roles.addPrivilegeToRole("admin",["/article","POST"], "Insert article", true);
 roles.addPrivilegeToRole("admin",["/article","PUT"], "Edit article", true);
 roles.addPrivilegeToRole("admin",["/article", "DELETE"], "Delete article", true);
 //Privileges assign to Editor
-roles.addPrivilegeToRole("editor",["/article","POST"],"Insert Article",true);
+roles.addPrivilegeToRole("editor",["/article","post"],"Insert Article",true);
 roles.addPrivilegeToRole("editor",["/article","PUT"],"Edit Article",true);
 
 //Privileges assign to author
-roles.addPrivilegeToRole("author",["/article","POST"],"Insert Article",true);
+roles.addPrivilegeToRole("author",["/article","post"],"Insert Article",true);
 
 //Privileges assign to subscriber
 roles.addPrivilegeToRole("subscriber",["/article","GET"],"Read article",true); // we don't need to define. just for clarification
 
 //Defining render pages
-app.get("/login",(res,req)=>{
-  res.send(__dirname + "html/login.html");
+app.get("/login",(req,res)=>{
+  res.sendFile(__dirname + "/html/login.html");
 });
-app.post("/post", (res,req)=>{
-  res.send(__dirname + "html/post.html");
+app.get("/post", (req,res)=>{
+  res.sendFile(__dirname + "/html/post.html");
 });
-app.put("/put", (res,req)=>{
-  res.send(__dirname + "/html/put.html");
+app.get("/put", (req,res)=>{
+  res.sendFile(__dirname + "/html/put.html");
 });
-app.delete("/delete",(res,req)=>{
-  res.send(__dirname + "html/delete.html");
+app.get("/delete",(req,res)=>{
+  res.sendFile(__dirname + "/html/delete.html");
+});
+
+
+//Login
+app.post("/login",(req,res)=>{
+  let user=req.body.user;
+  let password=req.body.password;
+  // to mimic database we are comparing user with password. in database it will be user
+  if (user==password){
+    jwtLogin.sign(req,res,user,"topsecret",1,false)
+  }
+  else{
+    res.status(500).send("invalid user")
+  }
+});
+//logout
+app.get("/logout",(req,res)=>{
+  jwtLogin.signout(req,res,false);
+});
+//middleware
+let valid_login=function(req,res,next){
+  try{
+      req.jwt=jwtLogin.validate_login(req,res);
+      next();
+  }
+  catch(error){
+    httpMsgs.send500(req,res,error);
+  }
+ 
+}
+//making a secure route for article.
+app.get("/article",valid_login,(req,res)=>{
+  res.send("hello world");
 });
 
 
