@@ -8,6 +8,7 @@ const dotenv = require("dotenv").config();
 const cookieParser =require('cookie-parser');
 const httpMsgs=require("http-msgs");
 const crypto= require("crypto-js");
+const model = require("./model")
 
 app.use(bodyparser.urlencoded({extended:false}));
 
@@ -28,7 +29,7 @@ roles.addPrivilegeToRole("admin",["/article","POST"], "Insert article", true);
 roles.addPrivilegeToRole("admin",["/article","PUT"], "Edit article", true);
 roles.addPrivilegeToRole("admin",["/article", "DELETE"], "Delete article", true);
 //Privileges assign to Editor
-roles.addPrivilegeToRole("editor",["/article","post"],"Insert Article",true);
+roles.addPrivilegeToRole("editor",["/article","POST"],"Insert Article",true);
 roles.addPrivilegeToRole("editor",["/article","PUT"],"Edit Article",true);
 
 //Privileges assign to author
@@ -38,6 +39,9 @@ roles.addPrivilegeToRole("author",["/article","post"],"Insert Article",true);
 roles.addPrivilegeToRole("subscriber",["/article","GET"],"Read article",true); // we don't need to define. just for clarification
 
 //Defining render pages
+app.get('/', (req,res)=>{
+  res.send("Hello World")
+})
 app.get("/login",(req,res)=>{
   res.sendFile(__dirname + "/html/login.html");
 });
@@ -81,16 +85,83 @@ let valid_login=function(req,res,next){
 }
 //making a secure route for article.
 app.get("/article",valid_login,(req,res)=>{
-  res.send("hello world");
+  console.log(req);
+  //assign the value of login user to variable user. 
+  var user=req.jwt.user;
+  try{
+    //assigning users role from model to variable role
+        var role = model.getRoles(user);
+    // check the login user privileges using roles.getRoleRoutePrivilegeValue(). Method returns boolean value.
+    //Method take three parameter role, the url that need to access and route. 
+        let value= roles.getRoleRoutePrivilegeValue(role,"/article","GET")
+    if (value){
+        res.send("hello this is from GET")
+    }
+    else
+    {
+      throw "Invalid user permission"
+    }    
+  }
+  catch (error){
+    httpMsgs.send500(req,res,error);
+  } 
+});
+app.post("/article",valid_login,(req,res)=>{
+  console.log(req);
+  var user=req.jwt.user;
+  try{
+        var role = model.getRoles(user);
+        let value= roles.getRoleRoutePrivilegeValue(role,"/article","POST")
+    if (value){
+        res.send("hello this is from POST")
+    }
+    else
+    {
+      throw "Invalid user permission"
+    }    
+  }
+  catch (error){
+    httpMsgs.send500(req,res,error);
+  } 
+});
+app.put("/article",valid_login,(req,res)=>{
+  console.log(req);
+  var user=req.jwt.user;
+  try{
+        var role = model.getRoles(user);
+        let value= roles.getRoleRoutePrivilegeValue(role,"/article","PUT")
+    if (value){
+        res.send("hello this is from PUT")
+    }
+    else
+    {
+      throw "Invalid user permission"
+    }    
+  }
+  catch (error){
+    httpMsgs.send500(req,res,error);
+  } 
+});
+app.delete("/article",valid_login,(req,res)=>{
+  console.log(req);
+  var user=req.jwt.user;
+  try{
+        var role = model.getRoles(user);
+        let value= roles.getRoleRoutePrivilegeValue(role,"/article","DELETE")
+    if (value){
+        res.send("hello this is from Delete")
+    }
+    else
+    {
+      throw "Invalid user permission"
+    }    
+  }
+  catch (error){
+    httpMsgs.send500(req,res,error);
+  } 
 });
 
-
-
-
-app.get('/', (req,res)=>{
-  res.send("Hello World")
-})
-
+//server creation
 app.listen (3000, (req,res)=>{
   console.log(`server is running on port 3000`);
 })
